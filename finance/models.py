@@ -2,9 +2,8 @@
 from django.db import models
 
 # Biblioteca Terceiros
-from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from django.core.validators import  MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator
 
 
 class ModelBase(models.Model):
@@ -36,18 +35,27 @@ class ModelBase(models.Model):
         managed = True
 
 
-class CustomUserManager(BaseUserManager):
-    def create_user(self, email, username, password=None, **extra_fields):
-        if not email:
-            raise ValueError('O email é obrigatório.')
-        email = self.normalize_email(email)
-        user = self.model(email=email, username=username, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-
 class CustomUser(AbstractUser, ModelBase, PermissionsMixin):
+    password = models.CharField(
+        max_length=255,
+        validators=[
+            MinLengthValidator(6)
+        ],
+        blank=False,
+    )
+
+    # Estes dois atributos são para evitar conflitos de nomenclatura entre AbstractUser e auth.User
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='customuser_groups',  # Nome diferente
+        blank=True,
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='customuser_permissions',  # Nome diferente
+        blank=True,
+    )
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -77,7 +85,7 @@ class Cards(models.Model):
     )
 
     def __str__(self):
-        return f"{self.card_brand} {self.balance}"
+        return f"{self.card_brand}"
 
 
 class Categories(models.Model):
