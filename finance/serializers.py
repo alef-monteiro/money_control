@@ -59,7 +59,7 @@ class CategoriesSerializer(serializers.ModelSerializer):
 
 class ExpensesSerializer(serializers.ModelSerializer):
     class Meta:
-        model: models.Expenses
+        model = models.Expenses
         fields = '__all__'
 
 class CardsSerializer(serializers.ModelSerializer):
