@@ -19,6 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('finance.urls')),
-    path('', include('finance.urls')),
+    path('api/', include('finance.urls')),  # Inclui todas as rotas da API no prefixo /api/
 ]
