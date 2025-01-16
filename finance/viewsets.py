@@ -106,15 +106,15 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
 class CardsViewSet(viewsets.ModelViewSet):
     queryset = models.Cards.objects.all()
-    serializer_class = serializers.CardsSerializer
+    serializer_class = serializers.CardSerializer
     filters_class = filters.CardsFilter
 
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = models.Categories.objects.all()
-    serializer_class = serializers.CategoriesSerializer
+    serializer_class = serializers.CategorySerializer
     filterset_class = filters.CategoriesFilter
 
 class ExpensesViewSet(viewsets.ModelViewSet):
     queryset = models.Expenses.objects.all()
-    serializer_class = serializers.ExpensesSerializer
+    serializer_class = serializers.ExpenseSerializer
     filterset_class = filters.ExpensesFilter

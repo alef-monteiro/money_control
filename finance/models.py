@@ -3,31 +3,27 @@ from django.db import models
 
 # Biblioteca Terceiros
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, EmailValidator
 
 
 class ModelBase(models.Model):
     id = models.BigAutoField(
         db_column='id',
-        null=False,
         primary_key=True,
     )
     created_at = models.DateTimeField(
         db_column='dt_created_at',
         auto_now_add=True,
         verbose_name="Data de Criação",
-        null=False,
     )
     modified_at = models.DateTimeField(
         db_column='dt_modified_at',
         auto_now=True,
-        verbose_name="Última modificação",
-        null=False,
+        verbose_name="Última Modificação",
     )
     active = models.BooleanField(
         db_column='cs_active',
         default=True,
-        null=False,
     )
 
     class Meta:
@@ -36,120 +32,82 @@ class ModelBase(models.Model):
 
 
 class CustomUser(AbstractUser, ModelBase, PermissionsMixin):
-    password = models.CharField(
+    username = models.CharField(
+        db_column='username',
+        max_length=50,
+        unique=True,  # Necessário para evitar o erro
+        validators=[MinLengthValidator(5)],
+    )
+    email = models.EmailField(
+        db_column='email',
         max_length=255,
-        validators=[
-            MinLengthValidator(6)
-        ],
-        blank=False,
+        unique=True,  # Opcional, caso o email seja usado como identificador
+        validators=[EmailValidator()],
     )
 
-    # Estes dois atributos são para evitar conflitos de nomenclatura entre AbstractUser e auth.User
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='customuser_groups',  # Nome diferente
-        blank=True,
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='customuser_permissions',  # Nome diferente
-        blank=True,
-    )
+    USERNAME_FIELD = 'username'  # Ou altere para 'email' se necessário
+    REQUIRED_FIELDS = ['email']  # Caso altere o USERNAME_FIELD
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
 
 class Cards(models.Model):
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        null=False,
-        blank=False
+        related_name='cards',
     )
-    name = models.CharField(
-        max_length=100,
-        blank=False,
-        null=False,
-    )
+    name = models.CharField(max_length=100)
     balance = models.DecimalField(
-        max_digits=10,  # Total de dígitos (incluindo casas decimais)
-        decimal_places=2,  # Quantidade de casas decimais
-        blank=False,
-        null=False,
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],  # Validação para evitar valores negativos
     )
-    card_brand = models.CharField(
-        max_length=100,
-        blank=False,
-        null=False,
-    )
+    card_brand = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.card_brand}"
+        return self.card_brand
 
 
 class Categories(models.Model):
-    name = models.CharField(
-        max_length=20,
-        blank=False,
-        null=False,
-    )
+    name = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.name
 
 
 class Expenses(models.Model):
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        null=False,
-        blank=False
+        related_name='expenses',
     )
-    card_id = models.ForeignKey(
+    card = models.ForeignKey(
         Cards,
         on_delete=models.CASCADE,
-        null=False,
-        blank=False
+        related_name='expenses',
     )
-    category_id = models.ForeignKey(
+    category = models.ForeignKey(
         Categories,
         on_delete=models.DO_NOTHING,
-        null=False,
-        blank=False,
+        related_name='expenses',
     )
-    name = models.CharField(
-        max_length=20,
-        blank=False,
-        null=False,
-    )
+    name = models.CharField(max_length=20)
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        blank=False,
-        null=False,
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        validators=[MinValueValidator(1)],
     )
-    currency = models.CharField(
-        max_length=10,
-        blank=False,
-        null=False,
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
-    )
-    payment_type = models.CharField(
-        max_length=20,
-        blank=False,
-        null=False,
-    )
-    purchase_date = models.DateField(
-        blank=False,
-        null=False,
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
-    )
-    due_date = models.DateField(
-        blank=False,
-        null=False,
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
-    )
-    status = models.CharField(
-        max_length=20,
-        blank=False,
-        null=False,
-    )
+    currency = models.CharField(max_length=10)
+    payment_type = models.CharField(max_length=20)
+    purchase_date = models.DateField()
+    due_date = models.DateField()
+    status = models.CharField(max_length=20)
+
+    def clean(self):
+        if self.due_date < self.purchase_date:
+            raise ValueError("A data de vencimento não pode ser anterior à data de compra.")
+
+    def __str__(self):
+        return f"{self.name} - {self.amount} {self.currency}"
