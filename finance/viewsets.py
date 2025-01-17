@@ -15,16 +15,16 @@ class CustomTokenObtainPairView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
+        username = request.data.get('username')
         password = request.data.get('password')
 
-        if not email or not password:
+        if not username or not password:
             return response.Response(
-                {'error': 'Email and password are required'},
+                {'error': 'Username and password are required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        user = authenticate(request, email=email, password=password)
+        user = authenticate(request, username=username, password=password)
         if user:
             refresh = RefreshToken.for_user(user)
             return response.Response({
@@ -34,7 +34,7 @@ class CustomTokenObtainPairView(APIView):
             }, status=status.HTTP_200_OK)
 
         return response.Response(
-            {'error': 'Invalid email or password'},
+            {'error': 'Invalid username or password'},
             status=status.HTTP_401_UNAUTHORIZED
         )
 

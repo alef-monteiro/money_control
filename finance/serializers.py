@@ -79,3 +79,4 @@ class CardSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Cards
         fields = '__all__'
+
