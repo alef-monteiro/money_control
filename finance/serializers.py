@@ -10,28 +10,42 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+        fields = [ 'first_name', 'last_name', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
-    def create(self, validated_data):
-        # Criação de usuário com senha criptografada
-        user = models.CustomUser(
-            username=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            email=validated_data['email'],
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+        def create(self, validated_data):
+            # Criação de usuário com senha criptografada
+            user = models.CustomUser.objects.create_user(validated_data)
+            return user
+
+    # # Teste
+    # def __init__(self, instance=None, data=empty, **kwargs):
+    #     super().__init__(instance, data, kwargs)
+    #     self.last_name = None
+    #     self.first_name = None
+
+    # def create(self, validated_data):
+    #     # Criação de usuário com senha criptografada
+    #     user = models.CustomUser(
+    #         first_name=validated_data['first_name'],
+    #         last_name=validated_data['last_name'],
+    #         email=validated_data['email'],
+    #     )
+    #     user.set_password(validated_data['password'])
+    #     user.save()
+    #     return user
+
+    # # Teste
+    # def get_full_name(self):
+    #     return self.first_name + ' ' + self.last_name
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+        fields = ['first_name', 'last_name', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -39,10 +53,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Criação de usuário com senha criptografada
         user = models.CustomUser(
-            username=validated_data['username'],
+            email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            email=validated_data['email'],
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -55,10 +68,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Adicione os campos necessários ao payload
         token['id'] = user.id
-        token['username'] = user.username
+        token['email'] = user.email
         token['first_name'] = user.first_name
         token['last_name'] = user.last_name
-        token['email'] = user.email
 
         return token
 
