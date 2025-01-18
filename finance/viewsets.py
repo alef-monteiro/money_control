@@ -9,6 +9,7 @@ from finance import serializers, models, filters
 
 User = get_user_model()
 
+
 # Fiz mudanças para resolver o problemas de payload
 
 class CustomTokenObtainPairView(views.TokenObtainPairView):
@@ -17,8 +18,6 @@ class CustomTokenObtainPairView(views.TokenObtainPairView):
     """
     permission_classes = [permissions.AllowAny]
     serializer_class = serializers.CustomTokenObtainPairSerializer
-
-
 
 
 class RegisterUserViewSet(APIView):
@@ -82,14 +81,7 @@ class LoginUserViewSet(APIView):
 class LogoutUserViewSet(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    # def post(self, request):
-    #     try:
-    #         refresh_token = request.data.get('refresh')
-    #         token = RefreshToken(refresh_token)
-    #         token.blacklist()
-    #         return response.Response({'message': 'Logout com sucesso'}, status=status.HTTP_200_OK)
-    #     except Exception as e:
-    #         return response.Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def post(self, request):
         request.user.auth_token.delete()  # Deleta o token associado ao usuário
