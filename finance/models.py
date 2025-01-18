@@ -31,6 +31,7 @@ class ModelBase(models.Model):
         abstract = True
         managed = True
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -48,6 +49,7 @@ class CustomUserManager(BaseUserManager):
 
         # Não precisa mais de username, então passamos só o email
         return self.create_user(email, password, **extra_fields)
+
 
 class CustomUser(AbstractUser, PermissionsMixin, ModelBase):
     # Usando email como identificador
@@ -70,6 +72,7 @@ class CustomUser(AbstractUser, PermissionsMixin, ModelBase):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
 
 class Cards(models.Model):
     user = models.ForeignKey(
