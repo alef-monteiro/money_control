@@ -1,4 +1,5 @@
 # Biblioteca Padrão
+from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 
 # Biblioteca Terceiros
@@ -30,27 +31,45 @@ class ModelBase(models.Model):
         abstract = True
         managed = True
 
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('O email deve ser fornecido')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
-class CustomUser(AbstractUser, ModelBase, PermissionsMixin):
+    def create_superuser(self, email, password=None, **extra_fields):
+        # Garantir que o superusuário tenha as permissões de staff e superusuário
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        # Não precisa mais de username, então passamos só o email
+        return self.create_user(email, password, **extra_fields)
+
+class CustomUser(AbstractUser, PermissionsMixin, ModelBase):
+    # Usando email como identificador
     username = models.CharField(
-        db_column='username',
         max_length=50,
-        unique=True,  # Necessário para evitar o erro
-        validators=[MinLengthValidator(5)],
+        unique=True,
+        blank=True,  # Permite o campo username em branco
     )
     email = models.EmailField(
-        db_column='email',
         max_length=255,
-        unique=True,  # Opcional, caso o email seja usado como identificador
-        validators=[EmailValidator()],
+        unique=True,  # O email será o identificador único
     )
 
-    USERNAME_FIELD = 'username'  # Ou altere para 'email' se necessário
-    REQUIRED_FIELDS = ['email']  # Caso altere o USERNAME_FIELD
+    # Mudando o campo principal para 'email'
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']  # Não incluir 'username'
+
+    # Define o UserManager para o modelo
+    objects = CustomUserManager()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
-
 
 class Cards(models.Model):
     user = models.ForeignKey(

@@ -10,7 +10,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+        fields = [ 'first_name', 'last_name', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -18,7 +18,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Criação de usuário com senha criptografada
         user = models.CustomUser(
-            username=validated_data['username'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             email=validated_data['email'],
@@ -31,7 +30,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+        fields = ['first_name', 'last_name', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -39,10 +38,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Criação de usuário com senha criptografada
         user = models.CustomUser(
-            username=validated_data['username'],
+            email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            email=validated_data['email'],
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -55,10 +53,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Adicione os campos necessários ao payload
         token['id'] = user.id
-        token['username'] = user.username
+        token['email'] = user.email
         token['first_name'] = user.first_name
         token['last_name'] = user.last_name
-        token['email'] = user.email
 
         return token
 
