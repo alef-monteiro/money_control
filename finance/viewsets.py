@@ -1,7 +1,24 @@
+# Imports do Django
 from django.contrib.auth import get_user_model, authenticate
-from rest_framework import viewsets, status
-from rest_framework import generics, permissions, response, serializers
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth
+
+# Imports do DRF (Django Rest Framework)
+from rest_framework import (
+    viewsets,
+    status,
+    generics,
+    permissions,
+    response,
+    serializers,
+)
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
+
+# Imports do DRF Simple JWT
 from rest_framework_simplejwt import views
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -81,8 +98,6 @@ class LoginUserViewSet(APIView):
 class LogoutUserViewSet(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-
-
     def post(self, request):
         request.user.auth_token.delete()  # Deleta o token associado ao usuário
         return response.Response({'message': 'Logout com sucesso'}, status=status.HTTP_200_OK)
@@ -110,3 +125,44 @@ class ExpensesViewSet(viewsets.ModelViewSet):
     queryset = models.Expenses.objects.all()
     serializer_class = serializers.ExpenseSerializer
     filterset_class = filters.ExpensesFilter
+
+
+# Dashboards Implementações
+class DashboardViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def total_balance(self, request):
+        user = request.user
+        total_balance = models.Cards.objects.filter(user=user).aggregate(Sum('balance'))['balance__sum'] or 0
+        return Response({'total_balance': total_balance})
+
+    @action(detail=True, methods=['get'])
+    def card_statement(self, request, pk=None):
+        card = models.Cards.objects.filter(user=request.user, id=pk).first()
+        if not card:
+            return Response({'error': f'Cartão com ID {pk} não encontrado'}, status=404)
+        serializer = serializers.CardStatementSerializer(card)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def user_expenses(self, request):
+        expenses = models.Expenses.objects.filter(user=request.user)
+        serializer = serializers.ExpenseSerializer(expenses, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def monthly_summary(self, request):
+        user = request.user
+        monthly_data = (
+            models.Expenses.objects.filter(user=user)
+            .annotate(month=TruncMonth('purchase_date'))
+            .values('month')
+            .annotate(
+                total_in=Sum('amount', filter=models.Q(payment_type='entrada')),
+                total_out=Sum('amount', filter=models.Q(payment_type='saída')),
+            )
+            .order_by('month')
+        )
+        serializer = serializers.MonthlySummarySerializer(monthly_data, many=True)
+        return Response(serializer.data)
