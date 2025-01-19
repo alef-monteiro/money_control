@@ -10,7 +10,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.CustomUser
-        fields = [  'username', 'first_name', 'last_name', 'email', 'password']
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -21,12 +21,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
             return user
 
 
-
-
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CustomUser
-        fields = ['username','first_name', 'last_name', 'email', 'password']
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -34,7 +32,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Criação de usuário com senha criptografada
         user = models.CustomUser(
-            username = validated_data['username'],
+            username=validated_data['username'],
             email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
@@ -64,6 +62,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
+    card_name = serializers.CharField(source='card.name')
+    category_name = serializers.CharField(source='category.name')
+
     class Meta:
         model = models.Expenses
         fields = '__all__'
@@ -74,3 +75,30 @@ class CardSerializer(serializers.ModelSerializer):
         model = models.Cards
         fields = '__all__'
 
+
+# Dashboard implementações
+class CardStatementSerializer(serializers.ModelSerializer):
+    expenses = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Cards
+        fields = ['name', 'balance', 'card_brand', 'expenses']
+
+    def get_expenses(self, obj):
+        expenses = obj.expenses.all()
+        return [
+            {
+                'name': expense.name,
+                'amount': expense.amount,
+                'currency': expense.currency,
+                'payment_type': expense.payment_type,
+                'purchase_date': expense.purchase_date,
+                'status': expense.status,
+            }
+            for expense in expenses
+        ]
+
+class MonthlySummarySerializer(serializers.Serializer):
+    month = serializers.DateField()
+    total_in = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_out = serializers.DecimalField(max_digits=10, decimal_places=2)
