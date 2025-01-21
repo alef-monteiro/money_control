@@ -1,7 +1,9 @@
 # Imports do Django
 from django.contrib.auth import get_user_model, authenticate
-from django.db.models import Sum
+from django.db.models import Sum, F
+from django.db.models.query_utils import Q
 from django.db.models.functions import TruncMonth
+
 
 # Imports do DRF (Django Rest Framework)
 from rest_framework import (
@@ -165,12 +167,15 @@ class DashboardViewSet(viewsets.ViewSet):
         monthly_data = (
             models.Expenses.objects.filter(user=user)
             .annotate(month=TruncMonth('purchase_date'))
+            .annotate(month_date=F('month__date'))  # Adiciona uma versão do mês sem hora (apenas data)
             .values('month')
             .annotate(
-                total_in=Sum('amount', filter=models.Q(payment_type='entrada')),
-                total_out=Sum('amount', filter=models.Q(payment_type='saída')),
+                total_in=Sum('amount', filter=Q(payment_type='entrada')),
+                total_out=Sum('amount', filter=Q(payment_type='saída')),
             )
             .order_by('month')
         )
         serializer = serializers.MonthlySummarySerializer(monthly_data, many=True)
         return Response(serializer.data)
+
+

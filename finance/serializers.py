@@ -101,6 +101,6 @@ class CardStatementSerializer(serializers.ModelSerializer):
 
 
 class MonthlySummarySerializer(serializers.Serializer):
-    month = serializers.DateField()
+    month_date = serializers.DateField()
     total_in = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_out = serializers.DecimalField(max_digits=10, decimal_places=2)

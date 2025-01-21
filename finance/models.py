@@ -123,3 +123,4 @@ class Expenses(models.Model):
                 card.save()
         super().save(*args, **kwargs)
 
+
