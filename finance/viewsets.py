@@ -16,7 +16,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ViewSet
 
 # Imports do DRF Simple JWT
 from rest_framework_simplejwt import views
@@ -126,6 +125,13 @@ class ExpensesViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ExpenseSerializer
     filterset_class = filters.ExpensesFilter
 
+    def perform_create(self, serializer):
+        card = serializer.validated_data['card']
+        amount = serializer.validated_data['amount']
+        if serializer.validated_data['payment_type'] == 'saída' and card.balance < amount:
+            raise serializers.ValidationError({'detail': 'Saldo insuficiente no cartão.'})
+        serializer.save(user=self.request.user)
+
 
 # Dashboards Implementações
 class DashboardViewSet(viewsets.ViewSet):
@@ -135,6 +141,8 @@ class DashboardViewSet(viewsets.ViewSet):
     def total_balance(self, request):
         user = request.user
         total_balance = models.Cards.objects.filter(user=user).aggregate(Sum('balance'))['balance__sum'] or 0
+        if total_balance is None:
+            return Response({'error': 'Nenhum saldo encontrado'} or 0, status=404)
         return Response({'total_balance': total_balance})
 
     @action(detail=True, methods=['get'])

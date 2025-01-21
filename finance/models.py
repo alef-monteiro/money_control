@@ -4,7 +4,6 @@ from django.db import models
 
 # Biblioteca Terceiros
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from django.core.validators import MinValueValidator, MinLengthValidator, EmailValidator
 
 
 class ModelBase(models.Model):
@@ -75,61 +74,52 @@ class CustomUser(AbstractUser, PermissionsMixin, ModelBase):
 
 
 class Cards(models.Model):
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='cards',
-    )
-    name = models.CharField(max_length=100)
-    balance = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0)],  # Validação para evitar valores negativos
-    )
-    card_brand = models.CharField(max_length=100)
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def __str__(self):
-        return self.card_brand
+        return f'{self.name} - Balance: {self.balance}'
 
 
 class Categories(models.Model):
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
 
 
 class Expenses(models.Model):
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='expenses',
-    )
-    card = models.ForeignKey(
-        Cards,
-        on_delete=models.CASCADE,
-        related_name='expenses',
-    )
-    category = models.ForeignKey(
-        Categories,
-        on_delete=models.DO_NOTHING,
-        related_name='expenses',
-    )
-    name = models.CharField(max_length=20)
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(1)],
-    )
-    currency = models.CharField(max_length=10)
-    payment_type = models.CharField(max_length=20)
-    purchase_date = models.DateField()
-    due_date = models.DateField()
-    status = models.CharField(max_length=20)
+    PAYMENT_CHOICES = [
+        ('credito', 'Crédito'),
+        ('debito', 'Débito'),
+        ('dinheiro', 'Dinheiro'),
+        ('pix', 'Pix'),
+    ]
 
-    def clean(self):
-        if self.due_date < self.purchase_date:
-            raise ValueError("A data de vencimento não pode ser anterior à data de compra.")
+    CATEGORY_CHOICES = [
+        ('alimentação', 'Alimentação'),
+        ('transporte', 'Transporte'),
+        ('lazer', 'Lazer'),
+        ('moradia', 'Moradia'),
+        ('saúde', 'Saúde'),
+    ]
 
-    def __str__(self):
-        return f"{self.name} - {self.amount} {self.currency}"
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
+    card = models.ForeignKey('Cards', on_delete=models.CASCADE, related_name='expenses')
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    purchase_date = models.DateTimeField(auto_now_add=True)
+    payment_type = models.CharField(max_length=50, choices=PAYMENT_CHOICES, default='dinheiro')
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)  # Adicionando categoria
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  # Apenas subtrai ao criar uma nova despesa
+            if self.payment_type == 'saída':
+                card = self.card
+                if card.balance < self.amount:
+                    raise ValueError('Saldo insuficiente no cartão.')
+                card.balance -= self.amount
+                card.save()
+        super().save(*args, **kwargs)
+
