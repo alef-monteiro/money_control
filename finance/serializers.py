@@ -71,6 +71,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Saldo insuficiente no cartão para esta despesa.')
         return data
 
+
 class CardSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Cards

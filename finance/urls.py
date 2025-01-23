@@ -18,6 +18,6 @@ urlpatterns = [
     path('register/', viewsets.RegisterUserViewSet.as_view(), name='register'),
     path('login/', viewsets.LoginUserViewSet.as_view(), name='login'),
     path('logout/', viewsets.LogoutUserViewSet.as_view(), name='logout'),
-    path('user/update/', viewsets.CustomUserUpdateAPIViewSet.as_view(), name='user_update'),
+    path('users/{id}/', viewsets.CustomUserUpdateAPIViewSet.as_view(), name='user_update'),
 ]
 

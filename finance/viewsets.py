@@ -55,23 +55,20 @@ class RegisterUserViewSet(APIView):
         return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.DestroyAPIView):
+class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyAPIView):
     queryset = models.CustomUser.objects.all()
     serializer_class = serializers.CustomUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
+        # Retorna o usuário autenticado
         return self.request.user
 
-    # adicionado do codigo alex
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        super().delete(request, *args, **kwargs)
-        return response.Response({'message': 'Usuário excluído com sucesso'},
-                                 status=status.HTTP_200_OK)
-
+        return self.destroy(request, *args, **kwargs)
 
 class LoginUserViewSet(APIView):
     permission_classes = [permissions.AllowAny]
@@ -110,10 +107,19 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     filterset_class = filters.CustomUserFilter
 
 
-class CardsViewSet(viewsets.ModelViewSet):
+class CardsViewSet(viewsets.ModelViewSet, generics.RetrieveUpdateAPIView):
     queryset = models.Cards.objects.all()
     serializer_class = serializers.CardSerializer
     filters_class = filters.CardsFilter
+
+    # adicionado do codigo alex
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return response.Response({'message': 'Cartão excluído com sucesso'},
+                                 status=status.HTTP_200_OK)
 
 
 class CategoriesViewSet(viewsets.ModelViewSet):
