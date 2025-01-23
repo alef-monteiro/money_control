@@ -2,8 +2,7 @@
 from django.contrib.auth import get_user_model, authenticate
 from django.db.models import Sum, F
 from django.db.models.query_utils import Q
-from django.db.models.functions import TruncMonth
-
+from django.db.models.functions import TruncMonth 
 
 # Imports do DRF (Django Rest Framework)
 from rest_framework import (
@@ -18,6 +17,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
 
 # Imports do DRF Simple JWT
 from rest_framework_simplejwt import views
@@ -141,6 +141,7 @@ class ExpensesViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+
 # Dashboards Implementações
 class DashboardViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -178,10 +179,9 @@ class DashboardViewSet(viewsets.ViewSet):
             .annotate(
                 total_in=Sum('amount', filter=Q(payment_type='entrada')),
                 total_out=Sum('amount', filter=Q(payment_type='saída')),
+
             )
             .order_by('month')
         )
         serializer = serializers.MonthlySummarySerializer(monthly_data, many=True)
         return Response(serializer.data)
-
-
