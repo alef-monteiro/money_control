@@ -61,7 +61,6 @@ class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.Retrie
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        # Retorna o usuário autenticado
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
