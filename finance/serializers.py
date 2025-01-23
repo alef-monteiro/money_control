@@ -67,7 +67,12 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Expenses
-        fields = '__all__'
+        fields = ['id', 'user', 'card', 'description', 'amount', 'purchase_date', 'payment_type']
+
+    def validate(self, data):
+        if data['payment_type'] == 'saída' and data['amount'] > data['card'].balance:
+            raise serializers.ValidationError('Saldo insuficiente no cartão para esta despesa.')
+        return data
 
 
 class CardSerializer(serializers.ModelSerializer):
@@ -98,7 +103,8 @@ class CardStatementSerializer(serializers.ModelSerializer):
             for expense in expenses
         ]
 
+
 class MonthlySummarySerializer(serializers.Serializer):
-    month = serializers.DateField()
+    month_date = serializers.DateField()
     total_in = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_out = serializers.DecimalField(max_digits=10, decimal_places=2)

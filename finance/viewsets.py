@@ -1,7 +1,8 @@
 # Imports do Django
 from django.contrib.auth import get_user_model, authenticate
-from django.db.models import Sum
-from django.db.models.functions import TruncMonth
+from django.db.models import Sum, F
+from django.db.models.query_utils import Q
+from django.db.models.functions import TruncMonth 
 
 # Imports do DRF (Django Rest Framework)
 from rest_framework import (
@@ -54,23 +55,20 @@ class RegisterUserViewSet(APIView):
         return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.DestroyAPIView):
+class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyAPIView):
     queryset = models.CustomUser.objects.all()
     serializer_class = serializers.CustomUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
+        # Retorna o usuário autenticado
         return self.request.user
 
-    # adicionado do codigo alex
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        super().delete(request, *args, **kwargs)
-        return response.Response({'message': 'Usuário excluído com sucesso'},
-                                 status=status.HTTP_200_OK)
-
+        return self.destroy(request, *args, **kwargs)
 
 class LoginUserViewSet(APIView):
     permission_classes = [permissions.AllowAny]
@@ -109,10 +107,19 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     filterset_class = filters.CustomUserFilter
 
 
-class CardsViewSet(viewsets.ModelViewSet):
+class CardsViewSet(viewsets.ModelViewSet, generics.RetrieveUpdateAPIView):
     queryset = models.Cards.objects.all()
     serializer_class = serializers.CardSerializer
     filters_class = filters.CardsFilter
+
+    # adicionado do codigo alex
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return response.Response({'message': 'Cartão excluído com sucesso'},
+                                 status=status.HTTP_200_OK)
 
 
 class CategoriesViewSet(viewsets.ModelViewSet):
@@ -126,6 +133,14 @@ class ExpensesViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ExpenseSerializer
     filterset_class = filters.ExpensesFilter
 
+    def perform_create(self, serializer):
+        card = serializer.validated_data['card']
+        amount = serializer.validated_data['amount']
+        if serializer.validated_data['payment_type'] == 'saída' and card.balance < amount:
+            raise serializers.ValidationError({'detail': 'Saldo insuficiente no cartão.'})
+        serializer.save(user=self.request.user)
+
+
 
 # Dashboards Implementações
 class DashboardViewSet(viewsets.ViewSet):
@@ -135,6 +150,8 @@ class DashboardViewSet(viewsets.ViewSet):
     def total_balance(self, request):
         user = request.user
         total_balance = models.Cards.objects.filter(user=user).aggregate(Sum('balance'))['balance__sum'] or 0
+        if total_balance is None:
+            return Response({'error': 'Nenhum saldo encontrado'} or 0, status=404)
         return Response({'total_balance': total_balance})
 
     @action(detail=True, methods=['get'])
@@ -157,10 +174,12 @@ class DashboardViewSet(viewsets.ViewSet):
         monthly_data = (
             models.Expenses.objects.filter(user=user)
             .annotate(month=TruncMonth('purchase_date'))
+            .annotate(month_date=F('month__date'))  # Adiciona uma versão do mês sem hora (apenas data)
             .values('month')
             .annotate(
-                total_in=Sum('amount', filter=models.Q(payment_type='entrada')),
-                total_out=Sum('amount', filter=models.Q(payment_type='saída')),
+                total_in=Sum('amount', filter=Q(payment_type='entrada')),
+                total_out=Sum('amount', filter=Q(payment_type='saída')),
+
             )
             .order_by('month')
         )
