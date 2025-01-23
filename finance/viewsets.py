@@ -64,7 +64,7 @@ class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.Retrie
         # Retorna o usuário autenticado
         return self.request.user
 
-    def put(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
