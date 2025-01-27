@@ -62,7 +62,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.Expenses
         fields = ['id', 'user', 'card', 'description', 'amount', 'purchase_date', 'payment_type']
@@ -106,3 +105,4 @@ class MonthlySummarySerializer(serializers.Serializer):
     month_date = serializers.DateField()
     total_in = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_out = serializers.DecimalField(max_digits=10, decimal_places=2)
+
