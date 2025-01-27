@@ -6,6 +6,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 
 
+
 class ModelBase(models.Model):
     id = models.BigAutoField(
         db_column='id',
