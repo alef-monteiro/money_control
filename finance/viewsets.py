@@ -37,29 +37,6 @@ class CustomTokenObtainPairView(views.TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = serializers.CustomTokenObtainPairSerializer
 
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-
-        if not username or not password:
-            return response.Response(
-                {'error': 'Username and password are required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user = authenticate(request, username=username, password=password)
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return response.Response({
-                'access_token': str(refresh.access_token),
-                'refresh_token': str(refresh),
-                'message': 'Login successful'
-            }, status=status.HTTP_200_OK)
-
-        return response.Response(
-            {'error': 'Invalid username or password'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
 
 class RegisterUserViewSet(APIView):
     permission_classes = [permissions.AllowAny]
@@ -84,6 +61,7 @@ class CustomUserUpdateAPIViewSet(generics.RetrieveUpdateAPIView, generics.Retrie
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
+        # Retorna o usuário autenticado
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
@@ -135,7 +113,8 @@ class CardsViewSet(viewsets.ModelViewSet, generics.RetrieveUpdateAPIView):
     filters_class = filters.CardsFilter
 
     # adicionado do codigo alex
-    def put(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
+
         return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
@@ -161,6 +140,14 @@ class ExpensesViewSet(viewsets.ModelViewSet):
         if serializer.validated_data['payment_type'] == 'saída' and card.balance < amount:
             raise serializers.ValidationError({'detail': 'Saldo insuficiente no cartão.'})
         serializer.save(user=self.request.user)
+
+    def patch(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return response.Response({'message': 'Gasto excluído com sucesso'},
+                                 status=status.HTTP_200_OK)
 
 
 

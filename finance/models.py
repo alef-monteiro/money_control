@@ -4,7 +4,6 @@ from django.db import models
 
 # Biblioteca Terceiros
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from django.core.validators import MinValueValidator, MinLengthValidator, EmailValidator
 
 
 
