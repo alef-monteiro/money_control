@@ -113,7 +113,7 @@ class CardsViewSet(viewsets.ModelViewSet, generics.RetrieveUpdateAPIView):
     filters_class = filters.CardsFilter
 
     # adicionado do codigo alex
-    def put(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
@@ -140,6 +140,13 @@ class ExpensesViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError({'detail': 'Saldo insuficiente no cartão.'})
         serializer.save(user=self.request.user)
 
+    def patch(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return response.Response({'message': 'Gasto excluído com sucesso'},
+                                 status=status.HTTP_200_OK)
 
 
 # Dashboards Implementações

@@ -62,8 +62,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
-    card_name = serializers.CharField(source='card.name')
-    category_name = serializers.CharField(source='category.name')
 
     class Meta:
         model = models.Expenses
